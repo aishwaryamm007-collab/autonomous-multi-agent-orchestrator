@@ -1,3 +1,4 @@
+from agents.core.llm_service import LLMService
 from agents.core.models import Task
 from agents.planner.planner import PlannerAgent
 
@@ -7,14 +8,13 @@ task = Task(
     goal="Research Python and Java",
 )
 
-planner = PlannerAgent()
+llm_service = LLMService()
+
+planner = PlannerAgent(llm_service)
 
 subtasks = planner.plan(task)
 
-print("Main task:")
-print(task)
-
-print("\nGenerated subtasks:")
+print("Generated subtasks:")
 
 for subtask in subtasks:
     print(f"- {subtask.id}: {subtask.goal}")
