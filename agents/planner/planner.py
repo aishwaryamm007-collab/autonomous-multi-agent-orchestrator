@@ -25,12 +25,16 @@ Return a structured list of subtasks.
 
         for planned_subtask in plan.subtasks:
             subtasks.append(
-                Task(
-                    id=f"{task.id}-{planned_subtask.id}",
-                    goal=planned_subtask.goal,
-                    parent_task_id=task.id,
-                )
-            )
+    Task(
+        id=f"{task.id}-{planned_subtask.id}",
+        goal=planned_subtask.goal,
+        parent_task_id=task.id,
+        dependencies=[
+            f"{task.id}-{dependency}"
+            for dependency in planned_subtask.dependencies
+        ],
+    )
+)
 
         task.subtasks = [subtask.id for subtask in subtasks]
 

@@ -2,6 +2,7 @@ from agents.core.agent_registry import AgentRegistry
 from agents.core.llm_service import LLMService
 from agents.core.models import Task, TaskStatus
 from agents.core.task_manager import TaskManager
+
 from agents.planner.planner import PlannerAgent
 from agents.research.researcher import ResearchAgent
 from agents.analysis.analyzer import AnalysisAgent
@@ -17,10 +18,8 @@ class Orchestrator:
     def __init__(self):
         self.task_manager = TaskManager()
 
-        llm_service = LLMService()
-
-        self.planner = PlannerAgent(llm_service)
-        self.synthesis_agent = SynthesisAgent()
+        self.llm_service = LLMService()
+        self.planner = PlannerAgent(self.llm_service)
 
         self.agent_registry = AgentRegistry()
 
@@ -39,6 +38,8 @@ class Orchestrator:
             VerificationAgent(),
         )
 
+        self.synthesis_agent = SynthesisAgent()
+
     def execute(self, task: Task) -> str:
         """
         Execute a complete multi-agent workflow.
@@ -46,6 +47,7 @@ class Orchestrator:
 
         print("\n========== ORCHESTRATOR START ==========")
 
+        # Store the main task
         self.task_manager.tasks[task.id] = task
 
         self.task_manager.update_status(
@@ -53,34 +55,107 @@ class Orchestrator:
             TaskStatus.RUNNING,
         )
 
-        print("\n[1] Planning...")
+        # -------------------------------------------------
+        # 1. PLAN
+        # -------------------------------------------------
+
+        print("\n[1] Planning subtasks...")
 
         subtasks = self.planner.plan(task)
 
-        results = []
+        print("\nGenerated subtasks:")
+
+        for subtask in subtasks:
+            print(
+                f"- {subtask.id}: {subtask.goal} "
+                f"| dependencies: {subtask.dependencies}"
+            )
+
+        # -------------------------------------------------
+        # 2. EXECUTE SUBTASKS
+        # -------------------------------------------------
 
         print("\n[2] Executing subtasks...")
 
-        for subtask in subtasks:
-            self.task_manager.tasks[subtask.id] = subtask
+        pending = subtasks.copy()
+        results = []
 
-            capability = self._detect_capability(subtask)
+        while pending:
+            progress = False
 
-            agent = self.agent_registry.get(capability)
+            for subtask in pending.copy():
 
-            if agent is None:
-                subtask.status = TaskStatus.FAILED
-                subtask.error = (
-                    f"No agent found for capability: {capability}"
+                # Store subtask in task manager
+                self.task_manager.tasks[subtask.id] = subtask
+
+                # Check whether all dependencies are completed
+                dependencies_ready = all(
+                    self.task_manager.tasks.get(dep_id)
+                    and self.task_manager.tasks[dep_id].status
+                    == TaskStatus.COMPLETED
+                    for dep_id in subtask.dependencies
                 )
-                continue
 
-            result = agent.execute(subtask)
+                # If dependencies are not ready,
+                # wait for the next iteration.
+                if not dependencies_ready:
+                    continue
 
-            subtask.result = result
-            subtask.status = TaskStatus.COMPLETED
+                # Determine which agent should execute
+                # this subtask.
+                capability = self._detect_capability(subtask)
 
-            results.append(result)
+                agent = self.agent_registry.get(capability)
+
+                # If no suitable agent exists,
+                # mark the task as failed.
+                if agent is None:
+                    subtask.status = TaskStatus.FAILED
+                    subtask.error = (
+                        f"No agent found for capability: {capability}"
+                    )
+
+                    pending.remove(subtask)
+                    progress = True
+
+                    continue
+
+                print(f"\nExecuting: {subtask.id}")
+                print(f"Goal: {subtask.goal}")
+                print(
+                    f"Dependencies: {subtask.dependencies}"
+                )
+
+                # Execute the specialized agent
+                result = agent.execute(subtask)
+
+                # Store result and status
+                subtask.result = result
+                subtask.status = TaskStatus.COMPLETED
+
+                results.append(result)
+
+                print(f"Completed: {subtask.id}")
+
+                # Remove from pending tasks
+                pending.remove(subtask)
+
+                progress = True
+
+            # If no task could be executed,
+            # dependencies cannot be resolved.
+            if not progress:
+                for subtask in pending:
+                    subtask.status = TaskStatus.FAILED
+                    subtask.error = (
+                        "Unresolved task dependencies"
+                    )
+
+                break
+
+        # -------------------------------------------------
+        # 3. SYNTHESIZE
+        # -------------------------------------------------
 
         print("\n[3] Synthesizing results...")
 

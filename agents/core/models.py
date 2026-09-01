@@ -19,3 +19,4 @@ class Task(BaseModel):
     result: Any | None = None
     error: str | None = None
     subtasks: list[str] = Field(default_factory=list)
+    dependencies: list[str] = Field(default_factory=list)

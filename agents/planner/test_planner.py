@@ -17,7 +17,10 @@ subtasks = planner.plan(task)
 print("Generated subtasks:")
 
 for subtask in subtasks:
-    print(f"- {subtask.id}: {subtask.goal}")
+   print(
+    f"- {subtask.id}: {subtask.goal} "
+    f"| dependencies: {subtask.dependencies}"
+)
 
 print("\nSubtask IDs stored in main task:")
 print(task.subtasks)

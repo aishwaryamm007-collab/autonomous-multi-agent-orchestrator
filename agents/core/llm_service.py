@@ -22,6 +22,7 @@ class LLMService:
                 PlannedSubtask(
                     id="research-java",
                     goal="Research Java",
+                    dependencies=["research-python"],
                 ),
             ]
         )
