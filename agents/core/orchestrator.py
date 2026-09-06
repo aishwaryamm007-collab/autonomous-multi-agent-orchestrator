@@ -2,14 +2,11 @@ from agents.core.agent_registry import AgentRegistry
 from agents.core.llm_service import LLMService
 from agents.core.models import Task, TaskStatus
 from agents.core.task_manager import TaskManager
-
 from agents.planner.planner import PlannerAgent
 from agents.research.researcher import ResearchAgent
 from agents.analysis.analyzer import AnalysisAgent
 from agents.verification.verifier import VerificationAgent
 from agents.synthesis.synthesizer import SynthesisAgent
-
-
 class Orchestrator:
     """
     Coordinates the execution of multiple specialized agents.
@@ -39,7 +36,6 @@ class Orchestrator:
         )
 
         self.synthesis_agent = SynthesisAgent()
-
     def execute(self, task: Task) -> str:
         """
         Execute a complete multi-agent workflow.
@@ -47,7 +43,6 @@ class Orchestrator:
 
         print("\n========== ORCHESTRATOR START ==========")
 
-        # Store the main task
         self.task_manager.tasks[task.id] = task
 
         self.task_manager.update_status(
@@ -85,10 +80,9 @@ class Orchestrator:
 
             for subtask in pending.copy():
 
-                # Store the subtask
                 self.task_manager.tasks[subtask.id] = subtask
 
-                # Check whether all dependencies are completed
+                # Check dependencies
                 dependencies_ready = all(
                     self.task_manager.tasks.get(dep_id)
                     and self.task_manager.tasks[dep_id].status
@@ -96,17 +90,15 @@ class Orchestrator:
                     for dep_id in subtask.dependencies
                 )
 
-                # Wait if dependencies are not ready
                 if not dependencies_ready:
                     continue
 
-                # Detect required capability
+                # Find the required agent
                 capability = self._detect_capability(subtask)
 
-                # Get the appropriate agent
                 agent = self.agent_registry.get(capability)
 
-                # Handle missing agent
+                # No agent available
                 if agent is None:
                     subtask.status = TaskStatus.FAILED
                     subtask.error = (
@@ -124,25 +116,81 @@ class Orchestrator:
                     f"Dependencies: {subtask.dependencies}"
                 )
 
-                # Execute the agent
-                result = agent.execute(subtask)
+                # -------------------------------------------------
+                # Retry agent execution
+                # -------------------------------------------------
 
-                # Store result
-                subtask.result = result
-                subtask.status = TaskStatus.COMPLETED
+                max_retries = 2
+                attempt = 0
+                result = None
+                execution_successful = False
 
-                results.append(result)
+                while attempt <= max_retries:
 
-                print(f"Completed: {subtask.id}")
+                    print(
+                        f"Attempt {attempt + 1} "
+                        f"of {max_retries + 1}"
+                    )
 
-                # Remove completed task
+                    try:
+                        result = agent.execute(subtask)
+                        execution_successful = True
+
+                        print(
+                            f"Attempt {attempt + 1} "
+                            f"succeeded."
+                        )
+
+                        break
+
+                    except Exception as error:
+
+                        attempt += 1
+
+                        print(
+                            f"Attempt failed: {error}"
+                        )
+
+                        if attempt > max_retries:
+
+                            subtask.status = TaskStatus.FAILED
+
+                            subtask.error = (
+                                f"Agent failed after "
+                                f"{max_retries + 1} attempts: "
+                                f"{error}"
+                            )
+
+                            print(
+                                f"Failed: {subtask.id} "
+                                f"after "
+                                f"{max_retries + 1} attempts"
+                            )
+
+                # -------------------------------------------------
+                # Handle execution result
+                # -------------------------------------------------
+
+                if execution_successful:
+
+                    subtask.result = result
+                    subtask.status = TaskStatus.COMPLETED
+
+                    results.append(result)
+
+                    print(
+                        f"Completed: {subtask.id}"
+                    )
+
                 pending.remove(subtask)
-
                 progress = True
 
-            # If nothing could execute, dependencies
-            # cannot be resolved.
+            # -------------------------------------------------
+            # Detect unresolved dependencies
+            # -------------------------------------------------
+
             if not progress:
+
                 for subtask in pending:
                     subtask.status = TaskStatus.FAILED
                     subtask.error = (
@@ -162,15 +210,20 @@ class Orchestrator:
         ]
 
         if failed_subtasks:
+
             print("\n[3] Some subtasks failed.")
 
             for subtask in failed_subtasks:
                 print(
-                    f"Failed: {subtask.id} - {subtask.error}"
+                    f"Failed: {subtask.id} - "
+                    f"{subtask.error}"
                 )
 
             task.status = TaskStatus.FAILED
-            task.error = "One or more subtasks failed."
+
+            task.error = (
+                "One or more subtasks failed."
+            )
 
             self.task_manager.update_status(
                 task.id,
@@ -188,8 +241,8 @@ class Orchestrator:
 
         print("\n[4] Synthesizing results...")
 
-        final_result = self.synthesis_agent.synthesize(
-            results
+        final_result = (
+            self.synthesis_agent.synthesize(results)
         )
 
         task.result = final_result
@@ -204,7 +257,7 @@ class Orchestrator:
         )
 
         return final_result
-
+      
     def _detect_capability(self, task: Task) -> str:
         """
         Determine which capability is required for a task.
