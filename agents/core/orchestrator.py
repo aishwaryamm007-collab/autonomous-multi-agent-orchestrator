@@ -85,7 +85,7 @@ class Orchestrator:
 
             for subtask in pending.copy():
 
-                # Store subtask in task manager
+                # Store the subtask
                 self.task_manager.tasks[subtask.id] = subtask
 
                 # Check whether all dependencies are completed
@@ -96,19 +96,17 @@ class Orchestrator:
                     for dep_id in subtask.dependencies
                 )
 
-                # If dependencies are not ready,
-                # wait for the next iteration.
+                # Wait if dependencies are not ready
                 if not dependencies_ready:
                     continue
 
-                # Determine which agent should execute
-                # this subtask.
+                # Detect required capability
                 capability = self._detect_capability(subtask)
 
+                # Get the appropriate agent
                 agent = self.agent_registry.get(capability)
 
-                # If no suitable agent exists,
-                # mark the task as failed.
+                # Handle missing agent
                 if agent is None:
                     subtask.status = TaskStatus.FAILED
                     subtask.error = (
@@ -126,10 +124,10 @@ class Orchestrator:
                     f"Dependencies: {subtask.dependencies}"
                 )
 
-                # Execute the specialized agent
+                # Execute the agent
                 result = agent.execute(subtask)
 
-                # Store result and status
+                # Store result
                 subtask.result = result
                 subtask.status = TaskStatus.COMPLETED
 
@@ -137,13 +135,13 @@ class Orchestrator:
 
                 print(f"Completed: {subtask.id}")
 
-                # Remove from pending tasks
+                # Remove completed task
                 pending.remove(subtask)
 
                 progress = True
 
-            # If no task could be executed,
-            # dependencies cannot be resolved.
+            # If nothing could execute, dependencies
+            # cannot be resolved.
             if not progress:
                 for subtask in pending:
                     subtask.status = TaskStatus.FAILED
@@ -154,12 +152,45 @@ class Orchestrator:
                 break
 
         # -------------------------------------------------
-        # 3. SYNTHESIZE
+        # 3. HANDLE FAILURES
         # -------------------------------------------------
 
-        print("\n[3] Synthesizing results...")
+        failed_subtasks = [
+            subtask
+            for subtask in subtasks
+            if subtask.status == TaskStatus.FAILED
+        ]
 
-        final_result = self.synthesis_agent.synthesize(results)
+        if failed_subtasks:
+            print("\n[3] Some subtasks failed.")
+
+            for subtask in failed_subtasks:
+                print(
+                    f"Failed: {subtask.id} - {subtask.error}"
+                )
+
+            task.status = TaskStatus.FAILED
+            task.error = "One or more subtasks failed."
+
+            self.task_manager.update_status(
+                task.id,
+                TaskStatus.FAILED,
+            )
+
+            return (
+                "Orchestrator failed because "
+                "one or more subtasks failed."
+            )
+
+        # -------------------------------------------------
+        # 4. SYNTHESIZE RESULTS
+        # -------------------------------------------------
+
+        print("\n[4] Synthesizing results...")
+
+        final_result = self.synthesis_agent.synthesize(
+            results
+        )
 
         task.result = final_result
 
@@ -168,7 +199,9 @@ class Orchestrator:
             TaskStatus.COMPLETED,
         )
 
-        print("\n========== ORCHESTRATOR COMPLETE ==========")
+        print(
+            "\n========== ORCHESTRATOR COMPLETE =========="
+        )
 
         return final_result
 
