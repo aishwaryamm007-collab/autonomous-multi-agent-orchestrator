@@ -2,17 +2,22 @@ from agents.core.agent_registry import AgentRegistry
 from agents.core.llm_service import LLMService
 from agents.core.models import Task, TaskStatus
 from agents.core.task_manager import TaskManager
+
 from agents.planner.planner import PlannerAgent
 from agents.research.researcher import ResearchAgent
 from agents.analysis.analyzer import AnalysisAgent
 from agents.verification.verifier import VerificationAgent
 from agents.synthesis.synthesizer import SynthesisAgent
+
+
 class Orchestrator:
     """
     Coordinates the execution of multiple specialized agents.
     """
 
-    def __init__(self):
+    def __init__(self, max_retries: int = 2):
+        self.max_retries = max_retries
+
         self.task_manager = TaskManager()
 
         self.llm_service = LLMService()
@@ -36,6 +41,7 @@ class Orchestrator:
         )
 
         self.synthesis_agent = SynthesisAgent()
+
     def execute(self, task: Task) -> str:
         """
         Execute a complete multi-agent workflow.
@@ -82,7 +88,7 @@ class Orchestrator:
 
                 self.task_manager.tasks[subtask.id] = subtask
 
-                # Check dependencies
+                # Check whether all dependencies are completed
                 dependencies_ready = all(
                     self.task_manager.tasks.get(dep_id)
                     and self.task_manager.tasks[dep_id].status
@@ -93,12 +99,13 @@ class Orchestrator:
                 if not dependencies_ready:
                     continue
 
-                # Find the required agent
+                # Detect required capability
                 capability = self._detect_capability(subtask)
 
+                # Find the appropriate agent
                 agent = self.agent_registry.get(capability)
 
-                # No agent available
+                # Handle missing agent
                 if agent is None:
                     subtask.status = TaskStatus.FAILED
                     subtask.error = (
@@ -120,16 +127,15 @@ class Orchestrator:
                 # Retry agent execution
                 # -------------------------------------------------
 
-                max_retries = 2
                 attempt = 0
                 result = None
                 execution_successful = False
 
-                while attempt <= max_retries:
+                while attempt <= self.max_retries:
 
                     print(
                         f"Attempt {attempt + 1} "
-                        f"of {max_retries + 1}"
+                        f"of {self.max_retries + 1}"
                     )
 
                     try:
@@ -151,20 +157,20 @@ class Orchestrator:
                             f"Attempt failed: {error}"
                         )
 
-                        if attempt > max_retries:
+                        if attempt > self.max_retries:
 
                             subtask.status = TaskStatus.FAILED
 
                             subtask.error = (
                                 f"Agent failed after "
-                                f"{max_retries + 1} attempts: "
+                                f"{self.max_retries + 1} attempts: "
                                 f"{error}"
                             )
 
                             print(
                                 f"Failed: {subtask.id} "
                                 f"after "
-                                f"{max_retries + 1} attempts"
+                                f"{self.max_retries + 1} attempts"
                             )
 
                 # -------------------------------------------------
@@ -257,7 +263,7 @@ class Orchestrator:
         )
 
         return final_result
-      
+
     def _detect_capability(self, task: Task) -> str:
         """
         Determine which capability is required for a task.

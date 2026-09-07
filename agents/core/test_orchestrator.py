@@ -92,7 +92,7 @@ retry_task = Task(
     goal="Research Python",
 )
 
-retry_orchestrator = Orchestrator()
+retry_orchestrator = Orchestrator(max_retries=1)
 
 flaky_agent = FlakyAgent()
 
