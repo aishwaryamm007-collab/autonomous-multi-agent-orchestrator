@@ -139,6 +139,7 @@ class Orchestrator:
                     )
 
                     try:
+                        subtask.attempts += 1
                         result = agent.execute(subtask)
                         execution_successful = True
 
@@ -154,7 +155,7 @@ class Orchestrator:
                         attempt += 1
 
                         print(
-                            f"Attempt failed: {error}"
+                           f"Attempt {subtask.attempts} failed: {error}"
                         )
 
                         if attempt > self.max_retries:

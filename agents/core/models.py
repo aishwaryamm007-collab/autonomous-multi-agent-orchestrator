@@ -18,5 +18,6 @@ class Task(BaseModel):
     parent_task_id: str | None = None
     result: Any | None = None
     error: str | None = None
+    attempts: int = 0
     subtasks: list[str] = Field(default_factory=list)
     dependencies: list[str] = Field(default_factory=list)
