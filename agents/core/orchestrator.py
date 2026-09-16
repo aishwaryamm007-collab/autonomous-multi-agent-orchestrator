@@ -270,8 +270,49 @@ class Orchestrator:
 
         task_text = f"{task.id} {task.goal}".lower()
 
+        # Direct capability matching
         for capability in self.agent_registry.capabilities():
-            if capability in task_text:
+            if capability.lower() in task_text:
                 return capability
+
+        # Research capability
+        if any(
+            keyword in task_text
+            for keyword in [
+                "research",
+                "investigate",
+                "study",
+                "find information",
+            ]
+        ):
+            if "research" in self.agent_registry.capabilities():
+                return "research"
+
+        # Analysis capability
+        if any(
+            keyword in task_text
+            for keyword in [
+                "analyze",
+                "analysis",
+                "analyse",
+                "evaluate",
+            ]
+        ):
+            if "analysis" in self.agent_registry.capabilities():
+                return "analysis"
+
+        # Verification capability
+        if any(
+            keyword in task_text
+            for keyword in [
+                "verify",
+                "verification",
+                "validate",
+                "validation",
+                "check",
+            ]
+        ):
+            if "verification" in self.agent_registry.capabilities():
+                return "verification"
 
         return "unknown"
