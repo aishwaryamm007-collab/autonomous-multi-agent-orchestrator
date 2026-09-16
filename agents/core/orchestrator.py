@@ -121,6 +121,29 @@ class Orchestrator:
                 print(
                     f"Dependencies: {subtask.dependencies}"
                 )
+                                # -------------------------------------------------
+                # Collect results from dependency tasks
+                # -------------------------------------------------
+
+                dependency_results = []
+
+                for dependency_id in subtask.dependencies:
+                    dependency_task = self.task_manager.tasks.get(
+                        dependency_id
+                    )
+
+                    if (
+                        dependency_task
+                        and dependency_task.result is not None
+                    ):
+                        dependency_results.append(
+                            str(dependency_task.result)
+                        )
+
+                if dependency_results:
+                    print("\nPassing previous results to agent:")
+                    for previous_result in dependency_results:
+                        print(f"- {previous_result}")
 
                 # -------------------------------------------------
                 # Retry agent execution
@@ -139,7 +162,16 @@ class Orchestrator:
 
                     try:
                         subtask.attempts += 1
-                        result = agent.execute(subtask)
+                        if capability in [
+                            "analysis",
+                            "verification",
+                        ]:
+                            result = agent.execute(
+                                subtask,
+                                dependency_results,
+                            )
+                        else:
+                         result = agent.execute(subtask)
                         execution_successful = True
 
                         print(
