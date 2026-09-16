@@ -8,16 +8,15 @@ from agents.research.researcher import ResearchAgent
 from agents.analysis.analyzer import AnalysisAgent
 from agents.verification.verifier import VerificationAgent
 from agents.synthesis.synthesizer import SynthesisAgent
+from agents.core.retry_policy import RetryPolicy
 
 
 class Orchestrator:
     """
     Coordinates the execution of multiple specialized agents.
     """
-
     def __init__(self, max_retries: int = 2):
-        self.max_retries = max_retries
-
+        self.retry_policy = RetryPolicy(max_retries)
         self.task_manager = TaskManager()
 
         self.llm_service = LLMService()
@@ -131,11 +130,11 @@ class Orchestrator:
                 result = None
                 execution_successful = False
 
-                while attempt <= self.max_retries:
+                while self.retry_policy.should_retry(attempt):
 
                     print(
                         f"Attempt {attempt + 1} "
-                        f"of {self.max_retries + 1}"
+                        f"of {self.retry_policy.total_attempts()}"
                     )
 
                     try:
@@ -158,20 +157,20 @@ class Orchestrator:
                            f"Attempt {subtask.attempts} failed: {error}"
                         )
 
-                        if attempt > self.max_retries:
+                        if not self.retry_policy.should_retry(attempt):
 
                             subtask.status = TaskStatus.FAILED
 
                             subtask.error = (
                                 f"Agent failed after "
-                                f"{self.max_retries + 1} attempts: "
+                                f"{self.retry_policy.total_attempts()} attempts: "
                                 f"{error}"
                             )
 
                             print(
                                 f"Failed: {subtask.id} "
                                 f"after "
-                                f"{self.max_retries + 1} attempts"
+                                f"{self.retry_policy.total_attempts()} attempts"
                             )
 
                 # -------------------------------------------------
@@ -197,14 +196,13 @@ class Orchestrator:
             # -------------------------------------------------
 
             if not progress:
-
-                for subtask in pending:
+                  for subtask in pending:
                     subtask.status = TaskStatus.FAILED
                     subtask.error = (
                         "Unresolved task dependencies"
                     )
 
-                break
+            break
 
         # -------------------------------------------------
         # 3. HANDLE FAILURES
