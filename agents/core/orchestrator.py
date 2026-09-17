@@ -9,6 +9,7 @@ from agents.analysis.analyzer import AnalysisAgent
 from agents.verification.verifier import VerificationAgent
 from agents.synthesis.synthesizer import SynthesisAgent
 from agents.core.retry_policy import RetryPolicy
+from agents.core.memory import Memory
 
 
 class Orchestrator:
@@ -18,7 +19,7 @@ class Orchestrator:
     def __init__(self, max_retries: int = 2):
         self.retry_policy = RetryPolicy(max_retries)
         self.task_manager = TaskManager()
-
+        self.memory = Memory()
         self.llm_service = LLMService()
         self.planner = PlannerAgent(self.llm_service)
 
@@ -213,6 +214,10 @@ class Orchestrator:
 
                     subtask.result = result
                     subtask.status = TaskStatus.COMPLETED
+                    self.memory.store_result(
+                        subtask.id,
+                        result,
+)
 
                     results.append(result)
 
