@@ -21,3 +21,19 @@ class Task(BaseModel):
     attempts: int = 0
     subtasks: list[str] = Field(default_factory=list)
     dependencies: list[str] = Field(default_factory=list)
+
+    def to_dict(self) -> dict:
+        """
+        Convert the task into a dictionary for persistent storage.
+        """
+
+        return {
+            "id": self.id,
+            "goal": self.goal,
+            "status": self.status.value,
+            "parent_task_id": self.parent_task_id,
+            "dependencies": self.dependencies,
+            "result": self.result,
+            "error": self.error,
+            "attempts": self.attempts,
+        }

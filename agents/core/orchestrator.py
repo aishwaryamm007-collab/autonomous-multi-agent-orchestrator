@@ -10,6 +10,7 @@ from agents.verification.verifier import VerificationAgent
 from agents.synthesis.synthesizer import SynthesisAgent
 from agents.core.retry_policy import RetryPolicy
 from agents.core.memory import Memory
+from agents.core.memory import Memory
 
 
 class Orchestrator:
@@ -55,6 +56,7 @@ class Orchestrator:
             task.id,
             TaskStatus.RUNNING,
         )
+        self.memory.store_task(task)
 
         # -------------------------------------------------
         # 1. PLAN
@@ -95,6 +97,7 @@ class Orchestrator:
                     == TaskStatus.COMPLETED
                     for dep_id in subtask.dependencies
                 )
+                self.memory.store_task(task)
 
                 if not dependencies_ready:
                     continue
@@ -289,11 +292,14 @@ class Orchestrator:
 
         task.result = final_result
 
+        task.status = TaskStatus.COMPLETED
+
         self.task_manager.update_status(
-            task.id,
-            TaskStatus.COMPLETED,
+           task.id,
+           TaskStatus.COMPLETED,
         )
 
+        self.memory.store_task(task)
         print(
             "\n========== ORCHESTRATOR COMPLETE =========="
         )
