@@ -47,7 +47,21 @@ class Orchestrator:
        Return tasks that were not completed in a previous run.
        """
 
-       return self.memory.get_incomplete_tasks()   
+       return self.memory.get_incomplete_tasks()
+    def recover_tasks(self):
+        """
+        Reconstruct incomplete tasks from persistent memory.
+        """
+
+        incomplete_tasks = self.get_incomplete_tasks()
+
+        recovered_tasks = []
+
+        for task_data in incomplete_tasks.values():
+            task = Task.from_dict(task_data)
+            recovered_tasks.append(task)
+
+        return recovered_tasks   
 
     def execute(self, task: Task) -> str:
         """
