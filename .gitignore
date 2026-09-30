@@ -47,3 +47,4 @@ out/
 memory.json
 test_memory.json
 test_task_state.json
+test_recovery.json
