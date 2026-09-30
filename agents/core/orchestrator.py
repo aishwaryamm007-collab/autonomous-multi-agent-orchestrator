@@ -59,10 +59,15 @@ class Orchestrator:
 
         for task_data in incomplete_tasks.values():
             task = Task.from_dict(task_data)
+
+            # A task that was running when the program stopped
+            # should be retried from the pending state.
+            if task.status == TaskStatus.RUNNING:
+                task.status = TaskStatus.PENDING
+
             recovered_tasks.append(task)
 
-        return recovered_tasks   
-
+        return recovered_tasks
     def execute(self, task: Task) -> str:
         """
         Execute a complete multi-agent workflow.

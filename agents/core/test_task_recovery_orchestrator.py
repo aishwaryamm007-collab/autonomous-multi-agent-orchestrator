@@ -33,7 +33,7 @@ for recovered_task in recovered_tasks:
 if (
     len(recovered_tasks) == 1
     and recovered_tasks[0].id == "recovered-task-1"
-    and recovered_tasks[0].status == TaskStatus.RUNNING
+    and recovered_tasks[0].status == TaskStatus.PENDING
     and recovered_tasks[0].attempts == 2
     and recovered_tasks[0].dependencies == ["previous-task"]
 ):
