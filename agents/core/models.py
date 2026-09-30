@@ -37,3 +37,20 @@ class Task(BaseModel):
             "error": self.error,
             "attempts": self.attempts,
         }
+    @classmethod
+    def from_dict(cls, data: dict) -> "Task":
+        """
+        Reconstruct a Task object from stored dictionary data.
+        """
+
+        return cls(
+            id=data["id"],
+            goal=data["goal"],
+            status=TaskStatus(data.get("status", "pending")),
+            parent_task_id=data.get("parent_task_id"),
+            result=data.get("result"),
+            error=data.get("error"),
+            attempts=data.get("attempts", 0),
+            subtasks=data.get("subtasks", []),
+            dependencies=data.get("dependencies", []),
+        )
