@@ -42,6 +42,12 @@ class Orchestrator:
         )
 
         self.synthesis_agent = SynthesisAgent()
+    def get_incomplete_tasks(self):
+       """
+       Return tasks that were not completed in a previous run.
+       """
+
+       return self.memory.get_incomplete_tasks()   
 
     def execute(self, task: Task) -> str:
         """
