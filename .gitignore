@@ -43,3 +43,7 @@ htmlcov/
 # Build / temporary files
 dist/
 out/
+# Runtime memory files
+memory.json
+test_memory.json
+test_task_state.json
