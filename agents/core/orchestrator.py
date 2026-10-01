@@ -68,6 +68,17 @@ class Orchestrator:
             recovered_tasks.append(task)
 
         return recovered_tasks
+    def resume_incomplete_tasks(self):
+        """
+        Resume all incomplete tasks from persistent memory.
+        """
+
+        recovered_tasks = self.recover_tasks()
+
+        for task in recovered_tasks:
+            self.execute(task)
+
+        return recovered_tasks
     def execute(self, task: Task) -> str:
         """
         Execute a complete multi-agent workflow.
