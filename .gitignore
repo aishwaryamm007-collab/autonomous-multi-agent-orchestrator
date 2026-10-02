@@ -48,3 +48,14 @@ memory.json
 test_memory.json
 test_task_state.json
 test_recovery.json
+
+# Recovery test runtime files
+test_orchestrator_recovery.json
+test_recovery_blocked_dependency.json
+test_recovery_completed_task.json
+test_recovery_deadlock.json
+test_recovery_dependencies.json
+test_recovery_dependency_blocking_execution.json
+test_recovery_dependency_execution.json
+test_restart_recovery.json
+test_task_recovery_orchestrator.json

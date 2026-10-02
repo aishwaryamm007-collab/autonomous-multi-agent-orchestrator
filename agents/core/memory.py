@@ -73,6 +73,18 @@ class Memory:
         """
 
         return self.task_states.copy()
+    def get_incomplete_tasks(self):
+        """
+        Return tasks that were not completed successfully.
+        """
+
+        incomplete_tasks = {}
+
+        for task_id, task_state in self.task_states.items():
+            if task_state.get("status") != "completed":
+                incomplete_tasks[task_id] = task_state
+
+        return incomplete_tasks
 
     def get_history(self):
         """
