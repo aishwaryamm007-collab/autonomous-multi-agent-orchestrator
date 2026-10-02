@@ -70,13 +70,46 @@ class Orchestrator:
         return recovered_tasks
     def resume_incomplete_tasks(self):
         """
-        Resume all incomplete tasks from persistent memory.
+        Resume incomplete tasks while respecting dependencies.
         """
 
         recovered_tasks = self.recover_tasks()
 
-        for task in recovered_tasks:
-            self.execute(task)
+        remaining_tasks = recovered_tasks.copy()
+
+        while remaining_tasks:
+            progress = False
+
+            for task in remaining_tasks.copy():
+                dependencies_ready = True
+
+                for dependency_id in task.dependencies:
+                    dependency_state = self.memory.get_task(
+                        dependency_id
+                    )
+
+                    if (
+                        dependency_state is None
+                        or dependency_state.get("status") != "completed"
+                    ):
+                        dependencies_ready = False
+                        break
+
+                if not dependencies_ready:
+                    continue
+
+                self.execute(task)
+
+                remaining_tasks.remove(task)
+
+                progress = True
+
+            if not progress:
+                print(
+                    "\nSome recovered tasks are waiting "
+                    "for incomplete dependencies."
+                )
+                break
 
         return recovered_tasks
     def execute(self, task: Task) -> str:
