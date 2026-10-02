@@ -3,7 +3,7 @@ from agents.core.memory import Memory
 
 print("\n========== MEMORY TEST ==========")
 
-memory = Memory()
+memory = Memory("test_memory.json")
 
 # Store results
 memory.store_result(
