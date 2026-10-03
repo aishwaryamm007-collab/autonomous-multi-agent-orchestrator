@@ -63,6 +63,8 @@ class LLMService:
                 "research",
                 "investigate",
                 "study",
+                "learn",
+                "learning",
                 "find information",
             ]
         ):

@@ -42,6 +42,7 @@ class Orchestrator:
         )
 
         self.synthesis_agent = SynthesisAgent()
+        self.execution_log = []
     def get_incomplete_tasks(self):
        """
        Return tasks that were not completed in a previous run.
@@ -190,6 +191,7 @@ class Orchestrator:
                     continue
 
                 print(f"\nExecuting: {subtask.id}")
+                self.execution_log.append(capability)
                 print(f"Goal: {subtask.goal}")
                 print(
                     f"Dependencies: {subtask.dependencies}"
