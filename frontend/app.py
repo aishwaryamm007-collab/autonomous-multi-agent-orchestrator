@@ -113,11 +113,15 @@ agents = [
     ("Synthesis", "Combines final results"),
 ]
 
+pipeline_placeholders = []
+
 for column, (name, description) in zip(columns, agents):
 
     with column:
 
-        st.markdown(
+        placeholder = st.empty()
+
+        placeholder.markdown(
             f"""
             <div class="agent-card">
                 <div class="agent-title">{name}</div>
@@ -128,9 +132,32 @@ for column, (name, description) in zip(columns, agents):
             unsafe_allow_html=True,
         )
 
+        pipeline_placeholders.append(
+            placeholder
+        )
+
 
 st.divider()
+def update_pipeline_status(statuses):
+    for placeholder, (name, description) in zip(
+        pipeline_placeholders,
+        agents,
+    ):
+        status = statuses.get(
+            name.lower(),
+            "Ready",
+        )
 
+        placeholder.markdown(
+            f"""
+            <div class="agent-card">
+                <div class="agent-title">{name}</div>
+                <div>{description}</div>
+                <div class="agent-status">{status}</div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
 
 # -------------------------------------------------
 # Execute Task
@@ -169,6 +196,31 @@ if st.button(
             )
 
             final_result = orchestrator.execute(task)
+            executed_agents = set(
+                orchestrator.execution_log
+            )
+
+            statuses = {
+               "planner": "Completed",
+               "research": (
+                  "Completed"
+                  if "research" in executed_agents
+                  else "Not required"
+                ),
+               "analysis": (
+                  "Completed"
+                  if "analysis" in executed_agents
+                  else "Not required"
+                ),
+                "verification": (
+                   "Completed"
+                   if "verification" in executed_agents
+                   else "Not required"
+                ),
+                "synthesis": "Completed",
+            }
+
+            update_pipeline_status(statuses)
             executed_agents = set(orchestrator.execution_log)
 
             if task.status.value == "completed":
