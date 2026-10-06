@@ -188,8 +188,27 @@ if st.button(
         )
 
         orchestrator = Orchestrator()
+        plan = orchestrator.planner.plan(task)
 
-        try:
+st.subheader("📋 Execution Plan")
+
+for index, subtask in enumerate(plan, start=1):
+
+    dependencies = (
+        ", ".join(subtask.dependencies)
+        if subtask.dependencies
+        else "None"
+    )
+
+    st.write(
+        f"**{index}. {subtask.goal}**"
+    )
+
+    st.caption(
+        f"Task ID: {subtask.id} | "
+        f"Dependencies: {dependencies}"
+    )
+try:
 
             status_placeholder.info(
                 "🧠 Planner is creating the execution plan..."
@@ -273,7 +292,7 @@ if st.button(
 
                 st.error(final_result)
 
-        except Exception as error:
+except Exception as error:
 
             status_placeholder.error(
                 "❌ An error occurred during execution."

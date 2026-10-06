@@ -10,10 +10,6 @@ class LLMService:
     """
 
     def generate(self, prompt: str) -> PlanResponse:
-        """
-        Generate a structured task plan.
-        """
-
         print("\nLLM prompt received:")
         print(prompt)
 
@@ -24,10 +20,6 @@ class LLMService:
         return self._generate_plan(goal)
 
     def _extract_goal(self, prompt: str) -> str:
-        """
-        Extract the user's goal from the planner prompt.
-        """
-
         marker = "User goal:"
         end_marker = "Create a practical execution plan."
 
@@ -45,17 +37,50 @@ class LLMService:
         return prompt.strip()
 
     def _generate_plan(self, goal: str) -> PlanResponse:
-        """
-        Generate a structured plan based on the goal.
-        """
-
         goal_lower = goal.lower()
-
         subtasks = []
 
-        # ---------------------------------------------
-        # Research goals
-        # ---------------------------------------------
+        # -------------------------------------------------
+        # Build / Development Tasks
+        # -------------------------------------------------
+
+        if any(
+            keyword in goal_lower
+            for keyword in [
+                "build",
+                "develop",
+                "create",
+                "implement",
+                "design",
+            ]
+        ):
+            return PlanResponse(
+                subtasks=[
+                    PlannedSubtask(
+                        id="research-requirements",
+                        goal=f"Research requirements for: {goal}",
+                        dependencies=[],
+                    ),
+                    PlannedSubtask(
+                        id="analyze-solution",
+                        goal=f"Analyze solution for: {goal}",
+                        dependencies=[
+                            "research-requirements"
+                        ],
+                    ),
+                    PlannedSubtask(
+                        id="verify-solution",
+                        goal=f"Verify solution for: {goal}",
+                        dependencies=[
+                            "analyze-solution"
+                        ],
+                    ),
+                ]
+            )
+
+        # -------------------------------------------------
+        # Research / Learning Tasks
+        # -------------------------------------------------
 
         if any(
             keyword in goal_lower
@@ -68,7 +93,6 @@ class LLMService:
                 "find information",
             ]
         ):
-
             if "python" in goal_lower:
                 subtasks.append(
                     PlannedSubtask(
@@ -95,10 +119,7 @@ class LLMService:
                     )
                 )
 
-            if (
-                "machine learning" in goal_lower
-                or "machine learning" in goal_lower
-            ):
+            if "machine learning" in goal_lower:
                 subtasks.append(
                     PlannedSubtask(
                         id="research-machine-learning",
@@ -124,48 +145,9 @@ class LLMService:
                     subtasks=subtasks
                 )
 
-        # ---------------------------------------------
-        # Build / development goals
-        # ---------------------------------------------
-
-        if any(
-            keyword in goal_lower
-            for keyword in [
-                "build",
-                "develop",
-                "create",
-                "implement",
-                "design",
-            ]
-        ):
-
-            return PlanResponse(
-                subtasks=[
-                    PlannedSubtask(
-                        id="research-requirements",
-                        goal=f"Research requirements for: {goal}",
-                        dependencies=[],
-                    ),
-                    PlannedSubtask(
-                        id="analyze-solution",
-                        goal=f"Analyze solution for: {goal}",
-                        dependencies=[
-                            "research-requirements"
-                        ],
-                    ),
-                    PlannedSubtask(
-                        id="verify-solution",
-                        goal=f"Verify solution for: {goal}",
-                        dependencies=[
-                            "analyze-solution"
-                        ],
-                    ),
-                ]
-            )
-
-        # ---------------------------------------------
-        # Analysis goals
-        # ---------------------------------------------
+        # -------------------------------------------------
+        # Analysis Tasks
+        # -------------------------------------------------
 
         if any(
             keyword in goal_lower
@@ -176,7 +158,6 @@ class LLMService:
                 "evaluate",
             ]
         ):
-
             return PlanResponse(
                 subtasks=[
                     PlannedSubtask(
@@ -187,9 +168,9 @@ class LLMService:
                 ]
             )
 
-        # ---------------------------------------------
-        # Verification goals
-        # ---------------------------------------------
+        # -------------------------------------------------
+        # Verification Tasks
+        # -------------------------------------------------
 
         if any(
             keyword in goal_lower
@@ -201,7 +182,6 @@ class LLMService:
                 "check",
             ]
         ):
-
             return PlanResponse(
                 subtasks=[
                     PlannedSubtask(
@@ -212,9 +192,9 @@ class LLMService:
                 ]
             )
 
-        # ---------------------------------------------
-        # General fallback
-        # ---------------------------------------------
+        # -------------------------------------------------
+        # General Task
+        # -------------------------------------------------
 
         return PlanResponse(
             subtasks=[
