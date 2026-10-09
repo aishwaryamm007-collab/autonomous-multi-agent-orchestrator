@@ -1,6 +1,11 @@
 # Autonomous Multi-Agent Task Orchestrator
 
 An autonomous multi-agent system that breaks complex goals into smaller tasks, assigns them to specialized agents, manages dependencies, handles failures and retries, persists task state, and recovers incomplete tasks after a restart.
+## Project Dashboard
+
+![Autonomous Multi-Agent Task Orchestrator Dashboard](docs/dashboard.png)
+
+*Live dashboard showing the execution plan, agent statuses, task summary, and final synthesized result.*
 
 ## Project Overview
 
